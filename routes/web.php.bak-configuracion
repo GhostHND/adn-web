@@ -1,0 +1,926 @@
+<?php
+
+use App\Http\Controllers\Editor\CatalogCategoryController;
+use App\Http\Controllers\Editor\CatalogController;
+use App\Http\Controllers\Editor\CatalogProductController;
+use App\Http\Controllers\Editor\CatalogProductFieldController;
+use App\Http\Controllers\Editor\CatalogProductMediaController;
+use App\Http\Controllers\Editor\ContactMessageController;
+use App\Http\Controllers\Editor\DashboardController;
+use App\Http\Controllers\Editor\MediaController;
+use App\Http\Controllers\Editor\PageController as EditorPageController;
+use App\Http\Controllers\Editor\PortfolioCategoryController;
+use App\Http\Controllers\Editor\PortfolioProjectController;
+use App\Http\Controllers\Editor\QuoteRequestController;
+use App\Http\Controllers\Editor\SettingController;
+use App\Http\Controllers\Editor\WebsiteAdController;
+
+use App\Http\Controllers\Integration\AppCatalogSyncController;
+use App\Http\Controllers\Integration\AppQuoteRequestController;
+
+use App\Http\Controllers\PublicSite\CatalogController as PublicCatalogController;
+use App\Http\Controllers\PublicSite\ContactController as PublicContactController;
+use App\Http\Controllers\PublicSite\HomeController as PublicHomeController;
+use App\Http\Controllers\PublicSite\PageController as PublicPageController;
+use App\Http\Controllers\PublicSite\PortfolioController as PublicPortfolioController;
+use App\Http\Controllers\PublicSite\QuoteRequestController as PublicQuoteRequestController;
+
+use App\Http\Middleware\VerifyAdnAppSignature;
+
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| SITIO PÚBLICO
+|--------------------------------------------------------------------------
+*/
+
+/*
+|--------------------------------------------------------------------------
+| INICIO
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/',
+    [
+        PublicHomeController::class,
+        'index',
+    ]
+)->name(
+    'public.home'
+);
+
+/*
+|--------------------------------------------------------------------------
+| PÁGINAS INSTITUCIONALES
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/sobre-nosotros',
+    [
+        PublicPageController::class,
+        'about',
+    ]
+)->name(
+    'public.about'
+);
+
+Route::get(
+    '/servicios',
+    [
+        PublicPageController::class,
+        'services',
+    ]
+)->name(
+    'public.services'
+);
+
+/*
+|--------------------------------------------------------------------------
+| CATÁLOGO
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/catalogo',
+    [
+        PublicCatalogController::class,
+        'index',
+    ]
+)->name(
+    'public.catalog'
+);
+
+Route::post(
+    '/catalogo/{product:slug}/cotizar',
+    [
+        PublicQuoteRequestController::class,
+        'store',
+    ]
+)->name(
+    'public.catalog.quote.store'
+);
+
+Route::get(
+    '/catalogo/{slug}',
+    [
+        PublicCatalogController::class,
+        'show',
+    ]
+)->name(
+    'public.catalog.show'
+);
+
+/*
+|--------------------------------------------------------------------------
+| PORTAFOLIO
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/portafolio',
+    [
+        PublicPortfolioController::class,
+        'index',
+    ]
+)->name(
+    'public.portfolio'
+);
+
+Route::get(
+    '/portafolio/{project:slug}',
+    [
+        PublicPortfolioController::class,
+        'show',
+    ]
+)->name(
+    'public.portfolio.show'
+);
+
+/*
+|--------------------------------------------------------------------------
+| CONTACTO
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/contacto',
+    [
+        PublicContactController::class,
+        'index',
+    ]
+)->name(
+    'public.contact'
+);
+
+Route::post(
+    '/contacto',
+    [
+        PublicContactController::class,
+        'store',
+    ]
+)
+    ->middleware(
+        'throttle:5,1'
+    )
+    ->name(
+        'public.contact.store'
+    );
+
+/*
+|--------------------------------------------------------------------------
+| INTEGRACIÓN PRIVADA ADN APP -> ADN WEB
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix(
+    'integrations/adn-app'
+)
+    ->middleware([
+        VerifyAdnAppSignature::class,
+        'throttle:120,1',
+    ])
+    ->group(
+        function (): void {
+            /*
+            |--------------------------------------------------------------------------
+            | CATÁLOGO MAESTRO
+            |--------------------------------------------------------------------------
+            */
+
+            Route::post(
+                '/catalog-products',
+                [
+                    AppCatalogSyncController::class,
+                    'store',
+                ]
+            )->name(
+                'integration.app.catalog.store'
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | SOLICITUDES
+            |--------------------------------------------------------------------------
+            */
+
+            Route::get(
+                '/quote-requests/{requestNumber}',
+                [
+                    AppQuoteRequestController::class,
+                    'show',
+                ]
+            )
+                ->where(
+                    'requestNumber',
+                    'SOL-WEB-[0-9]+'
+                )
+                ->name(
+                    'integration.app.quote.show'
+                );
+
+            Route::get(
+                '/quote-requests/{requestNumber}/files/{fileId}/view',
+                [
+                    AppQuoteRequestController::class,
+                    'previewFile',
+                ]
+            )
+                ->where(
+                    'requestNumber',
+                    'SOL-WEB-[0-9]+'
+                )
+                ->whereNumber(
+                    'fileId'
+                )
+                ->name(
+                    'integration.app.quote.files.preview'
+                );
+
+            Route::get(
+                '/quote-requests/{requestNumber}/files/{fileId}/download',
+                [
+                    AppQuoteRequestController::class,
+                    'downloadFile',
+                ]
+            )
+                ->where(
+                    'requestNumber',
+                    'SOL-WEB-[0-9]+'
+                )
+                ->whereNumber(
+                    'fileId'
+                )
+                ->name(
+                    'integration.app.quote.files.download'
+                );
+        }
+    );
+
+/*
+|--------------------------------------------------------------------------
+| EDITOR LOCAL
+|--------------------------------------------------------------------------
+*/
+
+if (
+    app()->environment(
+        'local'
+    )
+) {
+    Route::prefix(
+        'editor-preview'
+    )
+        ->name(
+            'editor.'
+        )
+        ->group(
+            function (): void {
+                /*
+                |--------------------------------------------------------------------------
+                | DASHBOARD
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get(
+                    '/',
+                    [
+                        DashboardController::class,
+                        'index',
+                    ]
+                )->name(
+                    'dashboard'
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | PÁGINAS
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get(
+                    '/paginas/{page:slug}/editar',
+                    [
+                        EditorPageController::class,
+                        'edit',
+                    ]
+                )->name(
+                    'pages.edit'
+                );
+
+                Route::put(
+                    '/paginas/{page:slug}',
+                    [
+                        EditorPageController::class,
+                        'update',
+                    ]
+                )->name(
+                    'pages.update'
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | CONTACTO
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get(
+                    '/contacto',
+                    [
+                        SettingController::class,
+                        'index',
+                    ]
+                )->name(
+                    'contact.index'
+                );
+
+                Route::put(
+                    '/contacto/configuracion',
+                    [
+                        SettingController::class,
+                        'update',
+                    ]
+                )->name(
+                    'contact.settings.update'
+                );
+
+                Route::get(
+                    '/contacto/mensajes',
+                    [
+                        ContactMessageController::class,
+                        'index',
+                    ]
+                )->name(
+                    'contact.messages.index'
+                );
+
+                Route::get(
+                    '/contacto/mensajes/{contactMessage}',
+                    [
+                        ContactMessageController::class,
+                        'show',
+                    ]
+                )->name(
+                    'contact.messages.show'
+                );
+
+                Route::patch(
+                    '/contacto/mensajes/{contactMessage}/estado',
+                    [
+                        ContactMessageController::class,
+                        'updateStatus',
+                    ]
+                )->name(
+                    'contact.messages.status'
+                );
+
+                Route::post(
+                    '/contacto/mensajes/{contactMessage}/sincronizar',
+                    [
+                        ContactMessageController::class,
+                        'retrySync',
+                    ]
+                )->name(
+                    'contact.messages.sync'
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | COTIZACIONES
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get(
+                    '/cotizaciones',
+                    [
+                        QuoteRequestController::class,
+                        'index',
+                    ]
+                )->name(
+                    'quotes.index'
+                );
+
+                Route::patch(
+                    '/cotizaciones/{quoteRequest}/estado',
+                    [
+                        QuoteRequestController::class,
+                        'updateStatus',
+                    ]
+                )->name(
+                    'quotes.status'
+                );
+
+                Route::get(
+                    '/cotizaciones/{quoteRequest}/archivos/{file}/ver',
+                    [
+                        QuoteRequestController::class,
+                        'previewFile',
+                    ]
+                )->name(
+                    'quotes.files.preview'
+                );
+
+                Route::get(
+                    '/cotizaciones/{quoteRequest}/archivos/{file}/descargar',
+                    [
+                        QuoteRequestController::class,
+                        'downloadFile',
+                    ]
+                )->name(
+                    'quotes.files.download'
+                );
+
+                Route::get(
+                    '/cotizaciones/{quoteRequest}',
+                    [
+                        QuoteRequestController::class,
+                        'show',
+                    ]
+                )->name(
+                    'quotes.show'
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | MULTIMEDIA
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get(
+                    '/multimedia',
+                    [
+                        MediaController::class,
+                        'index',
+                    ]
+                )->name(
+                    'media.index'
+                );
+
+                Route::post(
+                    '/multimedia',
+                    [
+                        MediaController::class,
+                        'store',
+                    ]
+                )->name(
+                    'media.store'
+                );
+
+                Route::delete(
+                    '/multimedia/{media}',
+                    [
+                        MediaController::class,
+                        'destroy',
+                    ]
+                )->name(
+                    'media.destroy'
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | PUBLICIDAD
+                |--------------------------------------------------------------------------
+                */
+
+                Route::get(
+                    '/publicidad',
+                    [
+                        WebsiteAdController::class,
+                        'index',
+                    ]
+                )->name(
+                    'ads.index'
+                );
+
+                Route::post(
+                    '/publicidad',
+                    [
+                        WebsiteAdController::class,
+                        'store',
+                    ]
+                )->name(
+                    'ads.store'
+                );
+
+                Route::put(
+                    '/publicidad/{ad}',
+                    [
+                        WebsiteAdController::class,
+                        'update',
+                    ]
+                )->name(
+                    'ads.update'
+                );
+
+                Route::delete(
+                    '/publicidad/{ad}',
+                    [
+                        WebsiteAdController::class,
+                        'destroy',
+                    ]
+                )->name(
+                    'ads.destroy'
+                );
+
+                /*
+                |--------------------------------------------------------------------------
+                | CATÁLOGO
+                |--------------------------------------------------------------------------
+                */
+
+                Route::prefix(
+                    'catalogo'
+                )
+                    ->name(
+                        'catalog.'
+                    )
+                    ->group(
+                        function (): void {
+                            Route::get(
+                                '/',
+                                [
+                                    CatalogController::class,
+                                    'index',
+                                ]
+                            )->name(
+                                'index'
+                            );
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | PRODUCTOS
+                            |--------------------------------------------------------------------------
+                            */
+
+                            Route::get(
+                                '/productos',
+                                [
+                                    CatalogProductController::class,
+                                    'index',
+                                ]
+                            )->name(
+                                'products.index'
+                            );
+
+                            Route::get(
+                                '/productos/app/{appProduct}/preparar',
+                                [
+                                    CatalogProductController::class,
+                                    'prepare',
+                                ]
+                            )->name(
+                                'products.prepare'
+                            );
+
+                            Route::post(
+                                '/productos/app/{appProduct}',
+                                [
+                                    CatalogProductController::class,
+                                    'storeFromApp',
+                                ]
+                            )->name(
+                                'products.store-from-app'
+                            );
+
+                            Route::get(
+                                '/productos/{product}/editar',
+                                [
+                                    CatalogProductController::class,
+                                    'edit',
+                                ]
+                            )->name(
+                                'products.edit'
+                            );
+
+                            Route::put(
+                                '/productos/{product}',
+                                [
+                                    CatalogProductController::class,
+                                    'update',
+                                ]
+                            )->name(
+                                'products.update'
+                            );
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | IMÁGENES DEL PRODUCTO
+                            |--------------------------------------------------------------------------
+                            */
+
+                            Route::get(
+                                '/productos/{product}/imagenes',
+                                [
+                                    CatalogProductMediaController::class,
+                                    'index',
+                                ]
+                            )->name(
+                                'products.media.index'
+                            );
+
+                            Route::post(
+                                '/productos/{product}/imagenes',
+                                [
+                                    CatalogProductMediaController::class,
+                                    'store',
+                                ]
+                            )->name(
+                                'products.media.store'
+                            );
+
+                            Route::post(
+                                '/productos/{product}/imagenes/existente',
+                                [
+                                    CatalogProductMediaController::class,
+                                    'attachExisting',
+                                ]
+                            )->name(
+                                'products.media.attach'
+                            );
+
+                            Route::put(
+                                '/productos/{product}/imagenes/principal/{media}',
+                                [
+                                    CatalogProductMediaController::class,
+                                    'setMain',
+                                ]
+                            )->name(
+                                'products.media.main'
+                            );
+
+                            Route::delete(
+                                '/productos/{product}/imagenes/{image}',
+                                [
+                                    CatalogProductMediaController::class,
+                                    'destroy',
+                                ]
+                            )->name(
+                                'products.media.destroy'
+                            );
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | CAMPOS DE COTIZACIÓN
+                            |--------------------------------------------------------------------------
+                            */
+
+                            Route::get(
+                                '/productos/{product}/campos',
+                                [
+                                    CatalogProductFieldController::class,
+                                    'index',
+                                ]
+                            )->name(
+                                'products.fields.index'
+                            );
+
+                            Route::post(
+                                '/productos/{product}/campos',
+                                [
+                                    CatalogProductFieldController::class,
+                                    'store',
+                                ]
+                            )->name(
+                                'products.fields.store'
+                            );
+
+                            Route::put(
+                                '/productos/{product}/campos/{field}',
+                                [
+                                    CatalogProductFieldController::class,
+                                    'update',
+                                ]
+                            )->name(
+                                'products.fields.update'
+                            );
+
+                            Route::delete(
+                                '/productos/{product}/campos/{field}',
+                                [
+                                    CatalogProductFieldController::class,
+                                    'destroy',
+                                ]
+                            )->name(
+                                'products.fields.destroy'
+                            );
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | CATEGORÍAS
+                            |--------------------------------------------------------------------------
+                            */
+
+                            Route::get(
+                                '/categorias',
+                                [
+                                    CatalogCategoryController::class,
+                                    'index',
+                                ]
+                            )->name(
+                                'categories.index'
+                            );
+
+                            Route::get(
+                                '/categorias/crear',
+                                [
+                                    CatalogCategoryController::class,
+                                    'create',
+                                ]
+                            )->name(
+                                'categories.create'
+                            );
+
+                            Route::post(
+                                '/categorias',
+                                [
+                                    CatalogCategoryController::class,
+                                    'store',
+                                ]
+                            )->name(
+                                'categories.store'
+                            );
+
+                            Route::get(
+                                '/categorias/{category}/editar',
+                                [
+                                    CatalogCategoryController::class,
+                                    'edit',
+                                ]
+                            )->name(
+                                'categories.edit'
+                            );
+
+                            Route::put(
+                                '/categorias/{category}',
+                                [
+                                    CatalogCategoryController::class,
+                                    'update',
+                                ]
+                            )->name(
+                                'categories.update'
+                            );
+
+                            Route::delete(
+                                '/categorias/{category}',
+                                [
+                                    CatalogCategoryController::class,
+                                    'destroy',
+                                ]
+                            )->name(
+                                'categories.destroy'
+                            );
+                        }
+                    );
+
+                /*
+                |--------------------------------------------------------------------------
+                | PORTAFOLIO
+                |--------------------------------------------------------------------------
+                */
+
+                Route::prefix(
+                    'portafolio'
+                )
+                    ->name(
+                        'portfolio.'
+                    )
+                    ->group(
+                        function (): void {
+                            /*
+                            |--------------------------------------------------------------------------
+                            | PROYECTOS
+                            |--------------------------------------------------------------------------
+                            */
+
+                            Route::get(
+                                '/proyectos',
+                                [
+                                    PortfolioProjectController::class,
+                                    'index',
+                                ]
+                            )->name(
+                                'projects.index'
+                            );
+
+                            Route::get(
+                                '/proyectos/crear',
+                                [
+                                    PortfolioProjectController::class,
+                                    'create',
+                                ]
+                            )->name(
+                                'projects.create'
+                            );
+
+                            Route::post(
+                                '/proyectos',
+                                [
+                                    PortfolioProjectController::class,
+                                    'store',
+                                ]
+                            )->name(
+                                'projects.store'
+                            );
+
+                            Route::get(
+                                '/proyectos/{project}/editar',
+                                [
+                                    PortfolioProjectController::class,
+                                    'edit',
+                                ]
+                            )->name(
+                                'projects.edit'
+                            );
+
+                            Route::put(
+                                '/proyectos/{project}',
+                                [
+                                    PortfolioProjectController::class,
+                                    'update',
+                                ]
+                            )->name(
+                                'projects.update'
+                            );
+
+                            Route::delete(
+                                '/proyectos/{project}',
+                                [
+                                    PortfolioProjectController::class,
+                                    'destroy',
+                                ]
+                            )->name(
+                                'projects.destroy'
+                            );
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | CATEGORÍAS
+                            |--------------------------------------------------------------------------
+                            */
+
+                            Route::get(
+                                '/categorias',
+                                [
+                                    PortfolioCategoryController::class,
+                                    'index',
+                                ]
+                            )->name(
+                                'categories.index'
+                            );
+
+                            Route::get(
+                                '/categorias/crear',
+                                [
+                                    PortfolioCategoryController::class,
+                                    'create',
+                                ]
+                            )->name(
+                                'categories.create'
+                            );
+
+                            Route::post(
+                                '/categorias',
+                                [
+                                    PortfolioCategoryController::class,
+                                    'store',
+                                ]
+                            )->name(
+                                'categories.store'
+                            );
+
+                            Route::get(
+                                '/categorias/{category}/editar',
+                                [
+                                    PortfolioCategoryController::class,
+                                    'edit',
+                                ]
+                            )->name(
+                                'categories.edit'
+                            );
+
+                            Route::put(
+                                '/categorias/{category}',
+                                [
+                                    PortfolioCategoryController::class,
+                                    'update',
+                                ]
+                            )->name(
+                                'categories.update'
+                            );
+
+                            Route::delete(
+                                '/categorias/{category}',
+                                [
+                                    PortfolioCategoryController::class,
+                                    'destroy',
+                                ]
+                            )->name(
+                                'categories.destroy'
+                            );
+                        }
+                    );
+            }
+        );
+}

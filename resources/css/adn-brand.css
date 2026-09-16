@@ -1,0 +1,231 @@
+/*
+|--------------------------------------------------------------------------
+| ADN PUBLICIDAD — IDENTIDAD VISUAL
+|--------------------------------------------------------------------------
+|
+| Este archivo contiene la paleta corporativa oficial de ADN Publicidad.
+|
+| Los colores provienen directamente del logotipo oficial.
+|
+| Turquesa  #0FA7B4
+| Coral     #E84657
+| Naranja   #ED7E24
+| Amarillo  #F5C000
+| Negro     #1D1D1B
+| Blanco    #FFFFFF
+|
+*/
+
+:root {
+    /*
+    |--------------------------------------------------------------------------
+    | COLORES CORPORATIVOS
+    |--------------------------------------------------------------------------
+    */
+
+    --adn-turquoise: #0fa7b4;
+    --adn-coral: #e84657;
+    --adn-orange: #ed7e24;
+    --adn-yellow: #f5c000;
+    --adn-black: #1d1d1b;
+    --adn-white: #ffffff;
+
+    /*
+    |--------------------------------------------------------------------------
+    | VARIANTES FUNCIONALES
+    |--------------------------------------------------------------------------
+    */
+
+    --adn-turquoise-hover: #12b7c5;
+    --adn-turquoise-soft: rgba(15, 167, 180, 0.10);
+    --adn-turquoise-border: rgba(15, 167, 180, 0.22);
+
+    --adn-coral-soft: rgba(232, 70, 87, 0.10);
+    --adn-coral-border: rgba(232, 70, 87, 0.22);
+
+    --adn-orange-soft: rgba(237, 126, 36, 0.10);
+    --adn-orange-border: rgba(237, 126, 36, 0.22);
+
+    --adn-yellow-soft: rgba(245, 192, 0, 0.10);
+    --adn-yellow-border: rgba(245, 192, 0, 0.22);
+
+    /*
+    |--------------------------------------------------------------------------
+    | SUPERFICIES
+    |--------------------------------------------------------------------------
+    */
+
+    --adn-bg: #090d0e;
+    --adn-bg-deep: #050809;
+
+    --adn-surface: #111718;
+    --adn-surface-raised: #151d1f;
+    --adn-surface-hover: #192326;
+
+    --adn-border: rgba(255, 255, 255, 0.065);
+    --adn-border-strong: rgba(255, 255, 255, 0.10);
+
+    /*
+    |--------------------------------------------------------------------------
+    | TEXTO
+    |--------------------------------------------------------------------------
+    */
+
+    --adn-text: #ffffff;
+    --adn-text-soft: rgba(255, 255, 255, 0.68);
+    --adn-text-muted: rgba(255, 255, 255, 0.42);
+    --adn-text-faint: rgba(255, 255, 255, 0.24);
+
+    /*
+    |--------------------------------------------------------------------------
+    | SOMBRAS
+    |--------------------------------------------------------------------------
+    */
+
+    --adn-shadow:
+        0 24px 80px rgba(0, 0, 0, 0.28);
+
+    --adn-shadow-soft:
+        0 12px 40px rgba(0, 0, 0, 0.18);
+}
+
+/*
+|--------------------------------------------------------------------------
+| FRANJA CORPORATIVA
+|--------------------------------------------------------------------------
+*/
+
+.adn-brand-stripe {
+    background:
+        linear-gradient(
+            90deg,
+            var(--adn-turquoise) 0%,
+            var(--adn-turquoise) 28%,
+            var(--adn-coral) 28%,
+            var(--adn-coral) 52%,
+            var(--adn-orange) 52%,
+            var(--adn-orange) 76%,
+            var(--adn-yellow) 76%,
+            var(--adn-yellow) 100%
+        );
+}
+
+/*
+|--------------------------------------------------------------------------
+| FONDO ADN
+|--------------------------------------------------------------------------
+*/
+
+.adn-brand-background {
+    background:
+        radial-gradient(
+            circle at 8% 5%,
+            rgba(15, 167, 180, 0.08),
+            transparent 31%
+        ),
+        radial-gradient(
+            circle at 92% 85%,
+            rgba(232, 70, 87, 0.05),
+            transparent 29%
+        ),
+        radial-gradient(
+            circle at 60% 10%,
+            rgba(237, 126, 36, 0.025),
+            transparent 22%
+        ),
+        var(--adn-bg);
+}
+
+/*
+|--------------------------------------------------------------------------
+| PANEL
+|--------------------------------------------------------------------------
+*/
+
+.adn-panel {
+    border:
+        1px solid
+        var(--adn-border);
+
+    background:
+        rgba(17, 23, 24, 0.88);
+
+    box-shadow:
+        var(--adn-shadow-soft);
+
+    backdrop-filter:
+        blur(20px);
+}
+
+/*
+|--------------------------------------------------------------------------
+| LOGOTIPO
+|--------------------------------------------------------------------------
+|
+| El logotipo oficial contiene texto negro.
+| Para respetarlo sin modificar sus colores, se utiliza sobre una
+| superficie blanca.
+|
+*/
+
+.adn-logo-plate {
+    background:
+        var(--adn-white);
+
+    box-shadow:
+        0 8px 26px
+        rgba(0, 0, 0, 0.18);
+}
+
+/*
+|--------------------------------------------------------------------------
+| BOTÓN PRINCIPAL
+|--------------------------------------------------------------------------
+*/
+
+.adn-primary-button {
+    border:
+        1px solid
+        rgba(255, 255, 255, 0.04);
+
+    background:
+        var(--adn-turquoise);
+
+    color:
+        var(--adn-white);
+
+    box-shadow:
+        0 10px 28px
+        rgba(15, 167, 180, 0.18);
+
+    transition:
+        transform 180ms ease,
+        background 180ms ease,
+        box-shadow 180ms ease;
+}
+
+.adn-primary-button:hover {
+    background:
+        var(--adn-turquoise-hover);
+
+    box-shadow:
+        0 14px 34px
+        rgba(15, 167, 180, 0.24);
+
+    transform:
+        translateY(-1px);
+}
+
+/*
+|--------------------------------------------------------------------------
+| SELECCIÓN
+|--------------------------------------------------------------------------
+*/
+
+::selection {
+    background:
+        var(--adn-turquoise);
+
+    color:
+        var(--adn-white);
+}

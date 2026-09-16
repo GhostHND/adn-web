@@ -1,0 +1,67 @@
+<?php
+
+namespace App\Http\Controllers\Editor;
+
+use App\Http\Controllers\Controller;
+use App\Models\CatalogCategory;
+use App\Models\CatalogProduct;
+use App\Models\Media;
+use App\Models\Page;
+use App\Models\PortfolioProject;
+use App\Models\QuoteRequest;
+use App\Models\Service;
+use Illuminate\Http\Response;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
+
+class DashboardController extends Controller
+{
+    public function index(): InertiaResponse|Response
+    {
+
+        $stats = [
+            'pages' => Page::count(),
+
+            'services' => Service::count(),
+
+            'categories' => CatalogCategory::count(),
+
+            'products' => CatalogProduct::count(),
+
+            'portfolio' => PortfolioProject::count(),
+
+            'media' => Media::count(),
+
+            'requests' => QuoteRequest::count(),
+
+            'new_requests' => QuoteRequest::query()
+                ->where('status', 'new')
+                ->count(),
+
+            'pending_sync' => QuoteRequest::query()
+                ->where('app_sync_status', 'pending')
+                ->count(),
+        ];
+
+        $recentRequests = QuoteRequest::query()
+            ->latest()
+            ->limit(5)
+            ->get([
+                'id',
+                'request_number',
+                'client_name',
+                'company',
+                'status',
+                'app_sync_status',
+                'created_at',
+            ]);
+
+        return Inertia::render(
+            'Editor/Dashboard',
+            [
+                'stats' => $stats,
+                'recentRequests' => $recentRequests,
+            ]
+        );
+    }
+}
